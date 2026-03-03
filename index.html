@@ -169,10 +169,9 @@
         `var u=window.location.href;` +
         `if(!u.includes('facebook.com'))return;` +
         `var g=function(p){var el=document.querySelector('meta[property="'+p+'"]');return el?el.getAttribute('content'):'';};` +
-        `var title=g('og:title')||document.title||'Facebook 게시물';` +
-        `var desc=g('og:description')||'';` +
+        `var title=(g('og:title')||document.title||'Facebook 게시물').slice(0,100);` +
         `var img=g('og:image')||'';` +
-        `var params=new URLSearchParams({url:u,title:title,desc:desc,img:img});` +
+        `var params=new URLSearchParams({url:u,title:title,img:img});` +
         `var proxy='${base}?'+params.toString();` +
         // 알림: alert() 차단 우회 — DOM에 직접 토스트 삽입
         `var toast=function(ok){` +
