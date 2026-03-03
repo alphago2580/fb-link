@@ -95,6 +95,15 @@
     summary { cursor: pointer; font-size: 13px; color: #888; margin-top: 16px; user-select: none; }
     summary:hover { color: #555; }
     details[open] summary { margin-bottom: 10px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
   </style>
 </head>
 <body>
@@ -271,7 +280,7 @@
       // share/p/ 형식 감지 → 자동 해소 먼저 시도
       if (isSharePUrl(input)) {
         btn.disabled = true;
-        btn.textContent = '🔍 링크 변환 중...';
+        btn.innerHTML = '<span class="spinner"></span>변환 중...';
         const og = await extractOG(input);
         btn.disabled = false;
         btn.textContent = '변환하기';
@@ -306,7 +315,7 @@
 
       const btn = document.querySelector('.main-btn');
       btn.disabled = true;
-      btn.textContent = '🔍 정보 추출 중...';
+      btn.innerHTML = '<span class="spinner"></span>변환 중...';
 
       // 수동 입력 없으면 자동 추출 (title+img만, desc 제외)
       if (!manualTitle || !manualImg) {
@@ -316,7 +325,7 @@
         if (og.resolved) {
           document.getElementById('input').value = og.resolved;
           btn.disabled = false;
-          btn.textContent = '변환하기';
+          btn.innerHTML = '변환하기';
           document.getElementById('share-p-guide').style.display = 'none';
           showError('✅ 링크가 자동으로 변환됐어요! 다시 "변환하기"를 눌러주세요.');
           return;
@@ -330,7 +339,7 @@
       if (manualDesc) params.set('desc', manualDesc);
 
       btn.disabled = false;
-      btn.textContent = '변환하기';
+      btn.innerHTML = '변환하기';
 
       const proxyUrl = VERCEL_BASE + '?' + params.toString();
       document.getElementById('result-url').textContent = proxyUrl;
