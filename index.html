@@ -164,6 +164,18 @@
     </div>
   </div>
 
+  <!-- 공유 수신 오버레이 -->
+  <div id="share-overlay" style="display:none;position:fixed;inset:0;background:#f0f2f5;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+    <div style="background:white;border-radius:20px;padding:32px 24px;max-width:400px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.12);text-align:center;">
+      <div style="font-size:40px;margin-bottom:12px;">🔗</div>
+      <div style="font-size:18px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">링크 변환 완료!</div>
+      <div style="font-size:13px;color:#888;margin-bottom:20px;">이 링크를 카카오톡에 붙여넣으세요</div>
+      <div id="share-url" style="background:#f0f7ff;border:1.5px solid #c5dcff;border-radius:10px;padding:12px;font-size:12px;color:#1560cc;word-break:break-all;line-height:1.5;margin-bottom:16px;text-align:left;"></div>
+      <button id="share-copy-btn" onclick="shareUrlCopy()" style="width:100%;padding:16px;background:#FEE500;color:#3C1E1E;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px;">📋 카카오톡에 복사</button>
+      <button onclick="shareClose()" style="width:100%;padding:12px;background:#f0f0f0;color:#555;border:none;border-radius:12px;font-size:14px;cursor:pointer;">닫기</button>
+    </div>
+  </div>
+
   <script>
     const VERCEL_BASE = window.location.origin + '/api/og';
 
@@ -245,15 +257,42 @@
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); convert(); }
     });
 
-    // PWA Share Target: ?fburl=... 로 공유받으면 자동 변환
+    // 공유 오버레이 함수
+    let shareProxyUrl = '';
+    function shareUrlCopy() {
+      const btn = document.getElementById('share-copy-btn');
+      navigator.clipboard.writeText(shareProxyUrl).then(() => {
+        btn.textContent = '✅ 복사됨! 카카오톡에 붙여넣기 하세요';
+        btn.style.background = '#d4f5d4';
+      }).catch(() => {
+        // 폴백: 텍스트 선택
+        const el = document.getElementById('share-url');
+        const r = document.createRange(); r.selectNodeContents(el);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(r);
+        btn.textContent = '위 링크를 길게 눌러 복사하세요';
+      });
+    }
+    function shareClose() {
+      document.getElementById('share-overlay').style.display = 'none';
+      window.history.replaceState({}, '', '/');
+    }
+
+    // PWA Share Target: ?fburl=... 로 공유받으면 오버레이 표시
     (function() {
-      const p = new URLSearchParams(window.location.search);
-      const shared = p.get('fburl');
-      if (shared && shared.includes('facebook.com')) {
-        document.getElementById('input').value = shared;
-        convert();
-        window.history.replaceState({}, '', '/');
-      }
+      try {
+        const p = new URLSearchParams(window.location.search);
+        const shared = p.get('fburl');
+        if (!shared) return;
+        // facebook.com, fb.com, m.facebook.com 등 허용
+        const isFb = /facebook\.com|fb\.com|fburl/i.test(shared);
+        if (!isFb) return;
+
+        shareProxyUrl = VERCEL_BASE + '?url=' + encodeURIComponent(shared);
+        document.getElementById('share-url').textContent = shareProxyUrl;
+        const overlay = document.getElementById('share-overlay');
+        overlay.style.display = 'flex';
+      } catch(e) {}
     })();
 
     // 서비스워커 등록
