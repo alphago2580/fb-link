@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  const { url } = req.query;
+  const { url, title: pTitle, desc: pDesc, img: pImg } = req.query;
   if (!url) return res.status(400).send('Missing url parameter');
 
   const escape = (s) =>
@@ -9,7 +9,7 @@ export default async function handler(req, res) {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
 
-  const unescape_html = (s) =>
+  const unescapeHtml = (s) =>
     String(s || '')
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
@@ -17,40 +17,40 @@ export default async function handler(req, res) {
       .replace(/&quot;/g, '"')
       .replace(/&#039;/g, "'");
 
-  let title = 'Facebook 게시물';
-  let desc = '';
-  let img = '';
+  let title = pTitle || '';
+  let desc = pDesc || '';
+  let img = pImg || '';
 
-  try {
-    const fbRes = await fetch(url, {
-      headers: {
-        'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      },
-      redirect: 'follow',
-    });
+  // 파라미터 없을 때만 서버 fetch 시도 (클라우드 IP 차단될 수 있음)
+  if (!title && !img) {
+    try {
+      const fbRes = await fetch(url, {
+        headers: {
+          'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+          'Accept-Language': 'ko-KR,ko;q=0.9',
+        },
+        redirect: 'follow',
+        signal: AbortSignal.timeout(5000),
+      });
 
-    const html = await fbRes.text();
+      const html = await fbRes.text();
 
-    const getOG = (prop) => {
-      const patterns = [
-        new RegExp(`<meta\\s+property="${prop}"\\s+content="([^"]*)"`, 'i'),
-        new RegExp(`<meta\\s+content="([^"]*)"\s+property="${prop}"`, 'i'),
-      ];
-      for (const p of patterns) {
-        const m = html.match(p);
-        if (m) return unescape_html(m[1]);
-      }
-      return '';
-    };
+      const getOG = (prop) => {
+        const m =
+          html.match(new RegExp(`<meta\\s+property="${prop}"\\s+content="([^"]*)"`, 'i')) ||
+          html.match(new RegExp(`<meta\\s+content="([^"]*)"\s+property="${prop}"`, 'i'));
+        return m ? unescapeHtml(m[1]) : '';
+      };
 
-    title = getOG('og:title') || 'Facebook 게시물';
-    desc = getOG('og:description') || '';
-    img = getOG('og:image') || '';
-  } catch (e) {
-    // fallback: 기본값 사용
+      title = getOG('og:title') || '';
+      desc = getOG('og:description') || '';
+      img = getOG('og:image') || '';
+    } catch (e) {
+      // 차단됨 — 기본값 사용
+    }
   }
+
+  title = title || 'Facebook 게시물';
 
   const html = `<!DOCTYPE html>
 <html lang="ko">

@@ -11,202 +11,202 @@
       background: #f0f2f5;
       min-height: 100vh;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      padding: 20px;
+      padding: 24px 16px;
     }
     .card {
       background: white;
       border-radius: 16px;
-      padding: 36px;
+      padding: 32px;
       max-width: 540px;
       width: 100%;
       box-shadow: 0 4px 24px rgba(0,0,0,0.08);
     }
-    .logo { font-size: 30px; margin-bottom: 8px; }
-    h1 { font-size: 21px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
-    .subtitle { font-size: 14px; color: #888; margin-bottom: 28px; line-height: 1.6; }
-
-    label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 8px; }
-    textarea {
-      width: 100%;
-      padding: 14px;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 10px;
-      font-size: 14px;
-      resize: none;
-      height: 90px;
-      outline: none;
-      transition: border-color 0.2s;
-      color: #1a1a1a;
-      font-family: inherit;
+    .logo { font-size: 28px; margin-bottom: 8px; }
+    h1 { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+    .subtitle { font-size: 13px; color: #888; margin-bottom: 28px; line-height: 1.6; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
+    input, textarea {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid #e0e0e0; border-radius: 10px;
+      font-size: 14px; outline: none;
+      transition: border-color 0.2s; color: #1a1a1a; font-family: inherit;
     }
-    textarea:focus { border-color: #1877f2; }
+    input:focus, textarea:focus { border-color: #1877f2; }
+    textarea { resize: none; height: 80px; }
+    .field { margin-bottom: 12px; }
     button.main-btn {
-      width: 100%;
-      margin-top: 14px;
-      padding: 14px;
-      background: #1877f2;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
+      width: 100%; margin-top: 4px; padding: 13px;
+      background: #1877f2; color: white;
+      border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
       transition: background 0.2s;
     }
     button.main-btn:hover { background: #1560cc; }
-
-    .result { margin-top: 24px; display: none; }
+    .result { margin-top: 20px; display: none; }
     .result-box {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #f0f7ff;
-      border: 1.5px solid #c5dcff;
-      border-radius: 10px;
-      padding: 12px 14px;
+      display: flex; align-items: center; gap: 8px;
+      background: #f0f7ff; border: 1.5px solid #c5dcff;
+      border-radius: 10px; padding: 12px 14px;
     }
-    .result-url {
-      flex: 1;
-      font-size: 12px;
-      color: #1560cc;
-      word-break: break-all;
-      line-height: 1.5;
-    }
+    .result-url { flex: 1; font-size: 12px; color: #1560cc; word-break: break-all; line-height: 1.5; }
     .copy-btn {
-      padding: 8px 16px;
-      background: #1877f2;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      flex-shrink: 0;
+      padding: 8px 16px; background: #1877f2; color: white;
+      border: none; border-radius: 8px; font-size: 13px;
+      font-weight: 600; cursor: pointer; white-space: nowrap; flex-shrink: 0;
     }
     .copy-btn:hover { background: #1560cc; }
     .error {
-      margin-top: 14px;
-      padding: 12px 14px;
-      background: #fff0f0;
-      border: 1.5px solid #ffc5c5;
-      border-radius: 10px;
-      font-size: 13px;
-      color: #c0392b;
-      display: none;
+      margin-top: 12px; padding: 11px 14px;
+      background: #fff0f0; border: 1.5px solid #ffc5c5;
+      border-radius: 10px; font-size: 13px; color: #c0392b; display: none;
     }
     .tip {
-      margin-top: 14px;
-      padding: 12px 14px;
-      background: #fffbf0;
-      border-radius: 10px;
-      font-size: 12px;
-      color: #a07000;
-      line-height: 1.6;
+      margin-top: 12px; padding: 11px 14px;
+      background: #fffbf0; border-radius: 10px;
+      font-size: 12px; color: #a07000; line-height: 1.6;
     }
     .tip strong { display: block; margin-bottom: 2px; }
-    .divider { margin: 28px 0; border: none; border-top: 1.5px solid #f0f0f0; }
-    .section-title { font-size: 16px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
-    .section-sub { font-size: 13px; color: #888; margin-bottom: 16px; line-height: 1.5; }
+    .divider { margin: 24px 0; border: none; border-top: 1.5px solid #f0f0f0; }
+    .section-title { font-size: 15px; font-weight: 700; color: #1a1a1a; margin-bottom: 5px; }
+    .section-sub { font-size: 13px; color: #888; margin-bottom: 14px; line-height: 1.5; }
     .bookmarklet-btn {
-      display: inline-block;
-      padding: 10px 20px;
-      background: #f0f7ff;
-      border: 2px dashed #1877f2;
-      border-radius: 10px;
-      color: #1877f2;
-      font-size: 14px;
-      font-weight: 600;
-      text-decoration: none;
-      cursor: grab;
-      user-select: none;
+      display: inline-block; padding: 10px 20px;
+      background: #f0f7ff; border: 2px dashed #1877f2;
+      border-radius: 10px; color: #1877f2; font-size: 14px;
+      font-weight: 600; text-decoration: none; cursor: grab; user-select: none;
     }
     .bookmarklet-btn:hover { background: #dceeff; }
-    .install-steps { margin-top: 14px; font-size: 13px; color: #555; line-height: 1.9; padding-left: 4px; }
-    .install-steps li { margin-left: 16px; }
+    .steps { margin-top: 14px; font-size: 13px; color: #555; line-height: 1.9; padding-left: 4px; }
+    .steps li { margin-left: 16px; }
+    .badge {
+      display: inline-block; padding: 2px 8px;
+      background: #e8f4ff; color: #1877f2;
+      border-radius: 20px; font-size: 11px; font-weight: 700;
+      margin-left: 6px; vertical-align: middle;
+    }
+    .badge-green { background: #e8f9f0; color: #1a9e5c; }
+    summary { cursor: pointer; font-size: 13px; color: #888; margin-top: 16px; user-select: none; }
+    summary:hover { color: #555; }
+    details[open] summary { margin-bottom: 10px; }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="logo">🔗</div>
     <h1>Facebook 링크 변환기</h1>
-    <p class="subtitle">
-      카카오톡에 공유할 때 썸네일이 안 나오는 경우,<br>
-      아래에 링크를 붙여넣으면 <strong>썸네일이 보이는 링크</strong>로 변환해드려요.
-    </p>
+    <p class="subtitle">카카오톡에 공유할 때 썸네일이 안 나오는 경우, 아래에서 변환하면 <strong>썸네일이 보이는 링크</strong>로 만들 수 있어요.</p>
 
-    <label>Facebook 게시물 링크</label>
-    <textarea id="input" placeholder="https://www.facebook.com/permalink.php?story_fbid=...&#10;https://www.facebook.com/share/p/..."></textarea>
+    <!-- ① 북마클릿 방법 (추천) -->
+    <div class="section-title">🔖 북마클릿 <span class="badge badge-green">추천</span></div>
+    <p class="section-sub">PC 브라우저에서 페이스북 게시물 열고 버튼 한 번 — 제일 정확해요.</p>
+    <a id="bookmarklet" class="bookmarklet-btn" href="#">📋 FB→카톡 변환</a>
+    <ol class="steps">
+      <li>위 버튼을 <strong>북마크 바로 드래그</strong>해서 설치</li>
+      <li>페이스북에서 공유할 게시물 열기</li>
+      <li><strong>FB→카톡 변환</strong> 클릭 → 링크 자동 복사</li>
+      <li>카카오톡에 붙여넣기</li>
+    </ol>
+    <div class="tip" style="margin-top:14px;">
+      <strong>⚠️ 북마크 바가 안 보인다면?</strong>
+      Chrome: <kbd>Ctrl+Shift+B</kbd> / Safari: 보기 → 즐겨찾기 막대 표시
+    </div>
+
+    <hr class="divider">
+
+    <!-- ② 수동 입력 방법 -->
+    <div class="section-title">✏️ 수동 입력 <span class="badge">대안</span></div>
+    <p class="section-sub">모바일이거나 북마클릿이 불편한 경우 — URL과 정보를 직접 입력하세요.</p>
+
+    <div class="field">
+      <label>Facebook 게시물 링크 *</label>
+      <textarea id="input" placeholder="https://www.facebook.com/permalink.php?story_fbid=...&#10;https://www.facebook.com/share/p/..."></textarea>
+    </div>
+
+    <details>
+      <summary>▸ 썸네일 정보 직접 입력 (선택)</summary>
+      <div class="field" style="margin-top:10px;">
+        <label>제목</label>
+        <input type="text" id="manualTitle" placeholder="게시물 제목 (비우면 '게시물 작성자 이름' 으로 표시될 수 있음)" />
+      </div>
+      <div class="field">
+        <label>이미지 URL (페이스북에서 이미지 우클릭 → 이미지 주소 복사)</label>
+        <input type="url" id="manualImg" placeholder="https://..." />
+      </div>
+      <div class="field">
+        <label>설명 (선택)</label>
+        <input type="text" id="manualDesc" placeholder="간단한 설명..." />
+      </div>
+    </details>
 
     <button class="main-btn" onclick="convert()">변환하기</button>
 
     <div class="result" id="result">
-      <label style="margin-top:20px;">✅ 이 링크를 카카오톡에 공유하세요!</label>
+      <label style="margin-top:18px;">✅ 이 링크를 카카오톡에 공유하세요!</label>
       <div class="result-box">
         <span class="result-url" id="result-url"></span>
-        <button class="copy-btn" onclick="copyUrl()">복사</button>
+        <button class="copy-btn" id="copy-btn" onclick="copyUrl()">복사</button>
       </div>
     </div>
 
     <div class="error" id="error"></div>
 
     <div class="tip">
-      <strong>💡 사용 방법</strong>
-      페이스북 게시물 → ··· → 링크 복사 → 위에 붙여넣기 → 변환하기 → 복사 → 카카오톡에 공유
-    </div>
-
-    <hr class="divider">
-
-    <div class="section-title">🔖 북마클릿</div>
-    <p class="section-sub">PC 브라우저에서 더 빠르게! 페이스북 게시물 페이지에서 버튼 클릭 한 번이면 바로 복사돼요.</p>
-
-    <a id="bookmarklet" class="bookmarklet-btn" href="#">📋 FB→카톡 변환</a>
-
-    <ol class="install-steps">
-      <li>위 버튼을 <strong>북마크 바로 드래그</strong>해서 등록</li>
-      <li>페이스북에서 공유하고 싶은 게시물 열기</li>
-      <li>북마크 바에서 <strong>FB→카톡 변환</strong> 클릭</li>
-      <li>자동으로 변환된 링크가 클립보드에 복사됨!</li>
-    </ol>
-
-    <div class="tip" style="margin-top:14px;">
-      <strong>⚠️ 북마크 바가 안 보인다면?</strong>
-      Chrome: Ctrl+Shift+B / Safari: 보기 → 즐겨찾기 막대 표시
+      <strong>💡 어떻게 동작하나요?</strong>
+      변환된 링크를 카카오톡에 붙여넣으면 카카오가 저희 서버 페이지를 읽어 썸네일을 표시해요.
+      클릭하면 바로 페이스북으로 이동해요.
     </div>
   </div>
 
   <script>
-    function getApiBase() {
-      return window.location.origin + '/api/og';
-    }
+    const VERCEL_BASE = window.location.origin + '/api/og';
+
+    // 북마클릿 코드 설정 (페이스북 DOM에서 OG 직접 추출)
+    document.addEventListener('DOMContentLoaded', () => {
+      const base = VERCEL_BASE;
+      const bmCode = `javascript:(function(){` +
+        `var u=window.location.href;` +
+        `if(!u.includes('facebook.com')){alert('Facebook 페이지에서 사용해주세요!');return;}` +
+        `var g=function(p){var el=document.querySelector('meta[property="'+p+'"]');return el?el.getAttribute('content'):'';};` +
+        `var title=g('og:title')||document.title||'Facebook 게시물';` +
+        `var desc=g('og:description')||'';` +
+        `var img=g('og:image')||'';` +
+        `var params=new URLSearchParams({url:u,title:title,desc:desc,img:img});` +
+        `var proxy='${base}?'+params.toString();` +
+        `navigator.clipboard.writeText(proxy)` +
+        `.then(function(){alert('\\u2705 복사됨!\\n카카오톡에 붙여넣기 하세요.');})` +
+        `.catch(function(){prompt('이 링크를 복사하세요:',proxy);});` +
+        `})();`;
+      document.getElementById('bookmarklet').href = bmCode;
+    });
 
     function convert() {
       const input = document.getElementById('input').value.trim();
       const resultDiv = document.getElementById('result');
       const errorDiv = document.getElementById('error');
-
       resultDiv.style.display = 'none';
       errorDiv.style.display = 'none';
 
-      if (!input) {
-        showError('링크를 입력해주세요.');
-        return;
-      }
-      if (!input.includes('facebook.com')) {
-        showError('Facebook 링크가 아닌 것 같아요. 다시 확인해주세요.');
-        return;
-      }
+      if (!input) { showError('링크를 입력해주세요.'); return; }
+      if (!input.includes('facebook.com')) { showError('Facebook 링크가 아닌 것 같아요.'); return; }
 
-      const proxyUrl = getApiBase() + '?url=' + encodeURIComponent(input);
+      const params = new URLSearchParams({ url: input });
+      const title = document.getElementById('manualTitle').value.trim();
+      const img = document.getElementById('manualImg').value.trim();
+      const desc = document.getElementById('manualDesc').value.trim();
+      if (title) params.set('title', title);
+      if (img) params.set('img', img);
+      if (desc) params.set('desc', desc);
+
+      const proxyUrl = VERCEL_BASE + '?' + params.toString();
       document.getElementById('result-url').textContent = proxyUrl;
       resultDiv.style.display = 'block';
     }
 
     async function copyUrl() {
       const url = document.getElementById('result-url').textContent;
-      const btn = document.querySelector('.copy-btn');
+      const btn = document.getElementById('copy-btn');
       try {
         await navigator.clipboard.writeText(url);
         btn.textContent = '복사됨! ✅';
@@ -226,24 +226,8 @@
       e.style.display = 'block';
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const base = getApiBase();
-      const bmCode = `javascript:(function(){` +
-        `var u=window.location.href;` +
-        `if(!u.includes('facebook.com')){alert('Facebook 페이지에서 사용해주세요!');return;}` +
-        `var p='${base}?url='+encodeURIComponent(u);` +
-        `navigator.clipboard.writeText(p)` +
-        `.then(function(){alert('✅ 복사됨!\\n카카오톡에 붙여넣기 하세요.');})` +
-        `.catch(function(){prompt('이 링크를 복사하세요:',p);});` +
-        `})();`;
-      document.getElementById('bookmarklet').href = bmCode;
-    });
-
     document.getElementById('input').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        convert();
-      }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); convert(); }
     });
   </script>
 </body>
