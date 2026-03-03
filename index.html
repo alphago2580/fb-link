@@ -206,12 +206,7 @@
         `var u=window.location.href;` +
         `if(!u.includes('facebook.com'))return;` +
         `var g=function(p){var el=document.querySelector('meta[property="'+p+'"]');return el?el.getAttribute('content'):'';};` +
-        `var t=g('og:title'),img=g('og:image'),d=g('og:description');` +
-        `var params='url='+encodeURIComponent(u);` +
-        `if(t)params+='&title='+encodeURIComponent(t);` +
-        `if(img)params+='&img='+encodeURIComponent(img);` +
-        `if(d)params+='&desc='+encodeURIComponent(d);` +
-        `var proxy='${base}?'+params;` +
+        `var proxy='${base}?url='+encodeURIComponent(u);` +
         `var toast=function(ok){` +
           `var d=document.createElement('div');` +
           `d.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#23272f;color:#fff;padding:13px 22px;border-radius:12px;z-index:2147483647;font-size:14px;font-family:sans-serif;box-shadow:0 4px 20px rgba(0,0,0,0.4);white-space:nowrap;pointer-events:none';` +
@@ -352,19 +347,8 @@
         const urlMatch = shared.match(/https?:\/\/\S+/);
         const finalUrl = urlMatch ? urlMatch[0] : shared;
 
-        // 공유로 들어온 URL도 OG 자동 추출
-        extractOG(finalUrl).then(og => {
-          const params = new URLSearchParams({ url: finalUrl });
-          if (og.title) params.set('title', og.title);
-          if (og.img) params.set('img', og.img);
-          if (og.desc) params.set('desc', og.desc);
-          shareProxyUrl = VERCEL_BASE + '?' + params.toString();
-          document.getElementById('share-url').textContent = shareProxyUrl;
-        }).catch(() => {
-          shareProxyUrl = VERCEL_BASE + '?url=' + encodeURIComponent(finalUrl);
-          document.getElementById('share-url').textContent = shareProxyUrl;
-        });
-        document.getElementById('share-url').textContent = '링크 생성 중...';
+        shareProxyUrl = VERCEL_BASE + '?url=' + encodeURIComponent(finalUrl);
+        document.getElementById('share-url').textContent = shareProxyUrl;
         document.getElementById('share-overlay').style.display = 'flex';
       } catch(e) {}
     })();
