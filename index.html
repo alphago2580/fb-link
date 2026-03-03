@@ -237,6 +237,26 @@
       document.getElementById('bookmarklet').href = bmCode;
     });
 
+    const SHORT_BASE = window.location.origin + '/api/s/';
+
+    async function saveLink(url, title, img) {
+      try {
+        const r = await fetch('/api/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, title, img }),
+          signal: AbortSignal.timeout(5000),
+        });
+        const d = await r.json();
+        if (d.id) return SHORT_BASE + d.id;
+      } catch(e) {}
+      // 저장 실패 시 기존 긴 URL로 폴백
+      const params = new URLSearchParams({ url });
+      if (title) params.set('title', title);
+      if (img) params.set('img', img);
+      return VERCEL_BASE + '?' + params.toString();
+    }
+
     async function extractOG(url) {
       try {
         const r = await fetch(`/api/fetch?url=${encodeURIComponent(url)}`, {
@@ -294,10 +314,7 @@
 
         if (og.resolved || og.title || og.canonical) {
           const targetUrl = og.canonical || og.resolved || input;
-          const params = new URLSearchParams({ url: targetUrl });
-          if (og.title) params.set('title', og.title);
-          if (og.img) params.set('img', og.img); // fbsbx는 짧게 변환됨
-          const proxyUrl = VERCEL_BASE + '?' + params.toString();
+          const proxyUrl = await saveLink(targetUrl, og.title, og.img);
           document.getElementById('result-url').textContent = proxyUrl;
           resultDiv.style.display = 'block';
           return;
@@ -314,38 +331,21 @@
 
       const manualTitle = document.getElementById('manualTitle').value.trim();
       const manualImg = document.getElementById('manualImg').value.trim();
-      const manualDesc = document.getElementById('manualDesc').value.trim();
-
-      const params = new URLSearchParams({ url: input });
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>변환 중...';
 
-      // 수동 입력 없으면 자동 추출 (title+img만, desc 제외)
+      let ogTitle = manualTitle, ogImg = manualImg;
       if (!manualTitle || !manualImg) {
         const og = await extractOG(input);
-
-        // share/p/ → canonical URL로 해소된 경우: 입력창 교체 후 재시도
-        if (og.resolved) {
-          document.getElementById('input').value = og.resolved;
-          btn.disabled = false;
-          btn.innerHTML = '변환하기';
-          document.getElementById('share-p-guide').style.display = 'none';
-          showError('✅ 링크가 자동으로 변환됐어요! 다시 "변환하기"를 눌러주세요.');
-          return;
-        }
-
-        if (og.title && !manualTitle) params.set('title', og.title);
-        if (og.img && !manualImg) params.set('img', og.img);
+        if (og.title && !manualTitle) ogTitle = og.title;
+        if (og.img && !manualImg) ogImg = og.img;
       }
-      if (manualTitle) params.set('title', manualTitle);
-      if (manualImg) params.set('img', manualImg);
-      if (manualDesc) params.set('desc', manualDesc);
 
       btn.disabled = false;
       btn.innerHTML = '변환하기';
 
-      const proxyUrl = VERCEL_BASE + '?' + params.toString();
+      const proxyUrl = await saveLink(input, ogTitle, ogImg);
       document.getElementById('result-url').textContent = proxyUrl;
       resultDiv.style.display = 'block';
     }
@@ -422,12 +422,9 @@
           document.getElementById('share-url').textContent = '🔍 링크 변환 중...';
           document.getElementById('share-copy-btn').disabled = true;
 
-          extractOG(finalUrl).then(og => {
+          extractOG(finalUrl).then(async og => {
             const targetUrl = og.canonical || og.resolved || finalUrl;
-            const params = new URLSearchParams({ url: targetUrl });
-            if (og.title) params.set('title', og.title);
-            if (og.img) params.set('img', og.img);
-            shareProxyUrl = VERCEL_BASE + '?' + params.toString();
+            shareProxyUrl = await saveLink(targetUrl, og.title, og.img);
             document.getElementById('share-url').textContent = shareProxyUrl;
             document.getElementById('share-copy-btn').disabled = false;
           }).catch(() => {
