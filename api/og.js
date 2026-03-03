@@ -52,6 +52,13 @@ export default async function handler(req, res) {
 
   title = title || 'Facebook 게시물';
 
+  // lookaside 이미지는 카카오 크롤러가 못 읽음 → 우리 서버로 프록시
+  if (img && (img.includes('lookaside.fbsbx.com') || img.includes('fbsbx.com'))) {
+    const host = req.headers.host || '';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    img = `${protocol}://${host}/api/img?url=${encodeURIComponent(img)}`;
+  }
+
   const html = `<!DOCTYPE html>
 <html lang="ko">
 <head>
