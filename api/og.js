@@ -25,17 +25,33 @@ export default async function handler(req, res) {
 
   // img 없으면 서버에서 fetch해서 img 획득 (title은 파라미터 우선)
   if (!img) {
-    try {
-      const fbRes = await fetch(url, {
+    const isLoginPage = h => /login|checkpoint|로그인\s*또는\s*가입/i.test(h.slice(0, 3000));
+    const fbFetch = async (u) => {
+      const r = await fetch(u, {
         headers: {
           'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
           'Accept-Language': 'ko-KR,ko;q=0.9',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         },
         redirect: 'follow',
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(8000),
       });
+      return { html: await r.text(), finalUrl: r.url || u };
+    };
 
-      const html = await fbRes.text();
+    try {
+      let { html, finalUrl } = await fbFetch(url);
+
+      // 로그인 페이지 → next= 파라미터에서 실제 URL 추출 후 재시도
+      if (isLoginPage(html)) {
+        try {
+          const nextUrl = new URL(finalUrl).searchParams.get('next');
+          if (nextUrl && nextUrl.includes('facebook.com')) {
+            const r2 = await fbFetch(nextUrl);
+            if (!isLoginPage(r2.html)) html = r2.html;
+          }
+        } catch(e) {}
+      }
 
       const getOG = (prop) => {
         const m =
@@ -44,8 +60,8 @@ export default async function handler(req, res) {
         return m ? unescapeHtml(m[1]) : '';
       };
 
-      title = getOG('og:title') || '';
-      desc = getOG('og:description') || '';
+      title = title || getOG('og:title') || '';
+      desc = desc || getOG('og:description') || '';
       img = getOG('og:image') || '';
     } catch (e) {
       // 차단됨 — 기본값 사용
