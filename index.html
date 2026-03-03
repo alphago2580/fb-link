@@ -276,11 +276,16 @@
         btn.disabled = false;
         btn.textContent = '변환하기';
 
-        if (og.resolved) {
-          // canonical URL 확보 → 입력창 교체 후 계속 진행
-          document.getElementById('input').value = og.resolved;
-          // 재귀 없이 그냥 아래 로직으로 흘러가도록 input 교체 후 다시 호출
-          convert();
+        if (og.resolved || og.title || og.img) {
+          // OG 데이터 or canonical URL 확보 → 바로 변환
+          const targetUrl = og.resolved || input;
+          const params = new URLSearchParams({ url: targetUrl });
+          if (og.title) params.set('title', og.title);
+          if (og.img) params.set('img', og.img);
+          // desc 제외 (URL 길이 절약)
+          const proxyUrl = VERCEL_BASE + '?' + params.toString();
+          document.getElementById('result-url').textContent = proxyUrl;
+          resultDiv.style.display = 'block';
           return;
         }
 
