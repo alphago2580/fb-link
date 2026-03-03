@@ -153,7 +153,8 @@
         <div style="font-size:15px;font-weight:700;color:#f57f17;margin-bottom:6px;">⚠️ 공유 링크는 자동 변환이 안 돼요</div>
         <div style="font-size:13px;color:#666;line-height:1.7;margin-bottom:14px;">
           Facebook 앱의 "링크 복사"로 만든 링크는 서버에서 읽을 수 없어요.<br>
-          아래 버튼으로 게시물을 열고, <strong>주소창 URL</strong>을 복사해서 다시 붙여넣어 주세요.
+          아래 버튼은 <strong>앱이 아닌 브라우저</strong>로 게시물을 열어요.<br>
+          주소창 URL을 복사해서 다시 붙여넣어 주세요.
         </div>
         <button id="share-p-url"
           onclick="openShareUrl(this.dataset.url)"
@@ -248,7 +249,10 @@
     }
 
     function openShareUrl(url) {
-      window.open(url, '_blank');
+      // web.facebook.com = 앱 대신 브라우저에서 열림 (앱 루프 방지)
+      const webUrl = url.replace('www.facebook.com', 'web.facebook.com')
+                        .replace('m.facebook.com', 'web.facebook.com');
+      window.open(webUrl, '_blank');
       document.getElementById('share-p-hint').style.display = 'block';
     }
 
@@ -376,9 +380,49 @@
         const urlMatch = shared.match(/https?:\/\/\S+/);
         const finalUrl = urlMatch ? urlMatch[0] : shared;
 
-        shareProxyUrl = VERCEL_BASE + '?url=' + encodeURIComponent(finalUrl);
-        document.getElementById('share-url').textContent = shareProxyUrl;
         document.getElementById('share-overlay').style.display = 'flex';
+
+        if (isSharePUrl(finalUrl)) {
+          // share/p/ → 서버에서 canonical 해소 시도
+          document.getElementById('share-url').textContent = '🔍 링크 변환 중...';
+          document.getElementById('share-copy-btn').disabled = true;
+
+          extractOG(finalUrl).then(og => {
+            let targetUrl = finalUrl;
+
+            if (og.resolved) {
+              targetUrl = og.resolved; // canonical URL 확보!
+            }
+
+            const params = new URLSearchParams({ url: targetUrl });
+            if (og.title) params.set('title', og.title);
+            if (og.img) params.set('img', og.img);
+            shareProxyUrl = VERCEL_BASE + '?' + params.toString();
+            document.getElementById('share-url').textContent = shareProxyUrl;
+            document.getElementById('share-copy-btn').disabled = false;
+
+            // canonical 못 얻었으면 안내 표시
+            if (!og.resolved && !og.title) {
+              const webUrl = finalUrl.replace('www.facebook.com', 'web.facebook.com')
+                                     .replace('m.facebook.com', 'web.facebook.com');
+              document.getElementById('share-url').innerHTML =
+                `<span style="color:#c0392b;font-size:12px;">⚠️ 썸네일 자동 추출 실패.<br>` +
+                `<a href="${webUrl}" target="_blank" style="color:#1877f2;">게시물 브라우저에서 열기 →</a><br>` +
+                `주소창 URL 복사 후 홈 화면에서 다시 붙여넣기</span>`;
+            }
+          });
+        } else {
+          // 일반 canonical URL
+          const params = new URLSearchParams({ url: finalUrl });
+          extractOG(finalUrl).then(og => {
+            if (og.title) params.set('title', og.title);
+            if (og.img) params.set('img', og.img);
+            shareProxyUrl = VERCEL_BASE + '?' + params.toString();
+            document.getElementById('share-url').textContent = shareProxyUrl;
+          });
+          shareProxyUrl = VERCEL_BASE + '?url=' + encodeURIComponent(finalUrl);
+          document.getElementById('share-url').textContent = '🔍 정보 추출 중...';
+        }
       } catch(e) {}
     })();
 
