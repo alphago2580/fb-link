@@ -55,8 +55,8 @@ export default async function handler(req, res) {
 
       const getOG = (prop) => {
         const m =
-          html.match(new RegExp(`<meta\\s+property="${prop}"\\s+content="([^"]*)"`, 'i')) ||
-          html.match(new RegExp(`<meta\\s+content="([^"]*)"\s+property="${prop}"`, 'i'));
+          html.match(new RegExp(`property="${prop}"[^>]*content="([^"]*)"`, 'i')) ||
+          html.match(new RegExp(`content="([^"]*)"[^>]*property="${prop}"`, 'i'));
         return m ? unescapeHtml(m[1]) : '';
       };
 
