@@ -246,7 +246,13 @@
 
         // share/p/ → canonical URL로 리다이렉트된 경우
         if (d.title || d.img || d.canonical) {
-          return { title: d.title, img: d.img, canonical: d.canonical };
+          // fbsbx.com → 짧은 /api/img?mid= 형식으로 변환
+          let img = d.img || '';
+          if (img.includes('fbsbx.com')) {
+            const mid = img.match(/media_id=(\d+)/);
+            img = mid ? `${window.location.origin}/api/img?mid=${mid[1]}` : img;
+          }
+          return { title: d.title, img, canonical: d.canonical };
         }
       } catch(e) {}
       return {};
@@ -287,11 +293,10 @@
         btn.textContent = '변환하기';
 
         if (og.resolved || og.title || og.canonical) {
-          // canonical URL 사용, img는 서버가 직접 fetch
           const targetUrl = og.canonical || og.resolved || input;
           const params = new URLSearchParams({ url: targetUrl });
           if (og.title) params.set('title', og.title);
-          // img 제외 → og.js 서버에서 직접 가져옴 (URL 단축)
+          if (og.img) params.set('img', og.img); // fbsbx는 짧게 변환됨
           const proxyUrl = VERCEL_BASE + '?' + params.toString();
           document.getElementById('result-url').textContent = proxyUrl;
           resultDiv.style.display = 'block';
@@ -421,7 +426,7 @@
             const targetUrl = og.canonical || og.resolved || finalUrl;
             const params = new URLSearchParams({ url: targetUrl });
             if (og.title) params.set('title', og.title);
-            // img 제외 → og.js 서버에서 직접 fetch
+            if (og.img) params.set('img', og.img);
             shareProxyUrl = VERCEL_BASE + '?' + params.toString();
             document.getElementById('share-url').textContent = shareProxyUrl;
             document.getElementById('share-copy-btn').disabled = false;
