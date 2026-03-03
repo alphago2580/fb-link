@@ -147,6 +147,26 @@
 
     <button class="main-btn" onclick="convert()">변환하기</button>
 
+    <!-- share/p/ 안내 -->
+    <div id="share-p-guide" style="display:none;margin-top:16px;">
+      <div style="background:#fff8e1;border:1.5px solid #ffe082;border-radius:12px;padding:16px;">
+        <div style="font-size:15px;font-weight:700;color:#f57f17;margin-bottom:6px;">⚠️ 공유 링크는 자동 변환이 안 돼요</div>
+        <div style="font-size:13px;color:#666;line-height:1.7;margin-bottom:14px;">
+          Facebook 앱의 "링크 복사"로 만든 링크는 서버에서 읽을 수 없어요.<br>
+          아래 버튼으로 게시물을 열고, <strong>주소창 URL</strong>을 복사해서 다시 붙여넣어 주세요.
+        </div>
+        <button id="share-p-url"
+          onclick="openShareUrl(this.dataset.url)"
+          style="width:100%;padding:12px;background:#1877f2;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">
+          🔗 게시물 브라우저에서 열기
+        </button>
+        <div id="share-p-hint" style="display:none;margin-top:10px;padding:10px 12px;background:#e8f5e9;border-radius:8px;font-size:12px;color:#2e7d32;line-height:1.6;">
+          ✅ 게시물이 열렸어요!<br>
+          주소창의 URL을 복사한 뒤 위 입력창에 다시 붙여넣고 변환하기를 눌러주세요.
+        </div>
+      </div>
+    </div>
+
     <div class="result" id="result">
       <label style="margin-top:18px;">✅ 이 링크를 카카오톡에 공유하세요!</label>
       <div class="result-box">
@@ -222,15 +242,34 @@
       return {};
     }
 
+    function isSharePUrl(url) {
+      return /facebook\.com\/share\/(p|v|r)\//.test(url);
+    }
+
+    function openShareUrl(url) {
+      window.open(url, '_blank');
+      document.getElementById('share-p-hint').style.display = 'block';
+    }
+
     async function convert() {
       const input = document.getElementById('input').value.trim();
       const resultDiv = document.getElementById('result');
       const errorDiv = document.getElementById('error');
+      const sharePDiv = document.getElementById('share-p-guide');
       resultDiv.style.display = 'none';
       errorDiv.style.display = 'none';
+      sharePDiv.style.display = 'none';
 
       if (!input) { showError('링크를 입력해주세요.'); return; }
       if (!input.includes('facebook.com')) { showError('Facebook 링크가 아닌 것 같아요.'); return; }
+
+      // share/p/ 형식 감지
+      if (isSharePUrl(input)) {
+        document.getElementById('share-p-url').dataset.url = input;
+        sharePDiv.style.display = 'block';
+        document.getElementById('share-p-hint').style.display = 'none';
+        return;
+      }
 
       const manualTitle = document.getElementById('manualTitle').value.trim();
       const manualImg = document.getElementById('manualImg').value.trim();
