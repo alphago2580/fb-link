@@ -420,28 +420,21 @@
           document.getElementById('share-copy-btn').disabled = true;
 
           extractOG(finalUrl).then(og => {
-            let targetUrl = finalUrl;
-
-            if (og.resolved) {
-              targetUrl = og.resolved; // canonical URL 확보!
-            }
-
+            let targetUrl = og.resolved || finalUrl;
             const params = new URLSearchParams({ url: targetUrl });
             if (og.title) params.set('title', og.title);
             if (og.img) params.set('img', og.img);
             shareProxyUrl = VERCEL_BASE + '?' + params.toString();
             document.getElementById('share-url').textContent = shareProxyUrl;
             document.getElementById('share-copy-btn').disabled = false;
-
-            // canonical 못 얻었으면 안내 표시
-            if (!og.resolved && !og.title) {
-              const webUrl = finalUrl.replace('www.facebook.com', 'web.facebook.com')
-                                     .replace('m.facebook.com', 'web.facebook.com');
-              document.getElementById('share-url').innerHTML =
-                `<span style="color:#c0392b;font-size:12px;">⚠️ 썸네일 자동 추출 실패.<br>` +
-                `<a href="${webUrl}" target="_blank" style="color:#1877f2;">게시물 브라우저에서 열기 →</a><br>` +
-                `주소창 URL 복사 후 홈 화면에서 다시 붙여넣기</span>`;
-            }
+          }).catch(() => {
+            const webUrl = finalUrl.replace('www.facebook.com', 'web.facebook.com')
+                                   .replace('m.facebook.com', 'web.facebook.com');
+            document.getElementById('share-url').innerHTML =
+              `<span style="color:#c0392b;font-size:12px;">⚠️ 썸네일 자동 추출 실패.<br>` +
+              `<a href="${webUrl}" target="_blank" style="color:#1877f2;">게시물 브라우저에서 열기 →</a><br>` +
+              `주소창 URL 복사 후 홈 화면에서 다시 붙여넣기</span>`;
+            document.getElementById('share-copy-btn').disabled = false;
           });
         } else {
           // 일반 canonical URL
