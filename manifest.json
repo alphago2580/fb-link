@@ -19,6 +19,8 @@
     "action": "/",
     "method": "GET",
     "params": {
+      "title": "fbtitle",
+      "text": "fbtext",
       "url": "fburl"
     }
   }

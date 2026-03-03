@@ -165,7 +165,7 @@
   </div>
 
   <!-- 공유 수신 오버레이 -->
-  <div id="share-overlay" style="display:none;position:fixed;inset:0;background:#f0f2f5;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+  <div id="share-overlay" style="display:none;position:fixed;inset:0;background:#f0f2f5;z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
     <div style="background:white;border-radius:20px;padding:32px 24px;max-width:400px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.12);text-align:center;">
       <div style="font-size:40px;margin-bottom:12px;">🔗</div>
       <div style="font-size:18px;font-weight:700;color:#1a1a1a;margin-bottom:6px;">링크 변환 완료!</div>
@@ -278,20 +278,27 @@
       window.history.replaceState({}, '', '/');
     }
 
-    // PWA Share Target: ?fburl=... 로 공유받으면 오버레이 표시
+    // PWA Share Target: fburl / fbtext / fbtitle 중 Facebook URL 찾아서 오버레이 표시
     (function() {
       try {
         const p = new URLSearchParams(window.location.search);
-        const shared = p.get('fburl');
-        if (!shared) return;
-        // facebook.com, fb.com, m.facebook.com 등 허용
-        const isFb = /facebook\.com|fb\.com|fburl/i.test(shared);
-        if (!isFb) return;
+        // 세 필드 다 확인 (앱마다 어디에 넣는지 다름)
+        const candidates = [p.get('fburl'), p.get('fbtext'), p.get('fbtitle')]
+          .filter(Boolean);
+        if (!candidates.length) return;
 
-        shareProxyUrl = VERCEL_BASE + '?url=' + encodeURIComponent(shared);
+        // URL처럼 생긴 것 or facebook 포함된 것 우선
+        const isFbUrl = s => /facebook\.com|fb\.com/i.test(s);
+        const shared = candidates.find(isFbUrl) || candidates[0];
+        if (!shared) return;
+
+        // fbtext가 "제목 URL" 형식이면 URL만 추출
+        const urlMatch = shared.match(/https?:\/\/\S+/);
+        const finalUrl = urlMatch ? urlMatch[0] : shared;
+
+        shareProxyUrl = VERCEL_BASE + '?url=' + encodeURIComponent(finalUrl);
         document.getElementById('share-url').textContent = shareProxyUrl;
-        const overlay = document.getElementById('share-overlay');
-        overlay.style.display = 'flex';
+        document.getElementById('share-overlay').style.display = 'flex';
       } catch(e) {}
     })();
 
