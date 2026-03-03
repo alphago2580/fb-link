@@ -277,6 +277,8 @@
       if (!input) { showError('링크를 입력해주세요.'); return; }
       if (!input.includes('facebook.com')) { showError('Facebook 링크가 아닌 것 같아요.'); return; }
 
+      const btn = document.querySelector('.main-btn');
+
       // share/p/ 형식 감지 → 자동 해소 먼저 시도
       if (isSharePUrl(input)) {
         btn.disabled = true;
@@ -313,7 +315,6 @@
 
       const params = new URLSearchParams({ url: input });
 
-      const btn = document.querySelector('.main-btn');
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>변환 중...';
 
