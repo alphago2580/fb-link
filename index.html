@@ -268,9 +268,26 @@
       if (!input) { showError('링크를 입력해주세요.'); return; }
       if (!input.includes('facebook.com')) { showError('Facebook 링크가 아닌 것 같아요.'); return; }
 
-      // share/p/ 형식 감지
+      // share/p/ 형식 감지 → 자동 해소 먼저 시도
       if (isSharePUrl(input)) {
-        document.getElementById('share-p-url').dataset.url = input;
+        btn.disabled = true;
+        btn.textContent = '🔍 링크 변환 중...';
+        const og = await extractOG(input);
+        btn.disabled = false;
+        btn.textContent = '변환하기';
+
+        if (og.resolved) {
+          // canonical URL 확보 → 입력창 교체 후 계속 진행
+          document.getElementById('input').value = og.resolved;
+          // 재귀 없이 그냥 아래 로직으로 흘러가도록 input 교체 후 다시 호출
+          convert();
+          return;
+        }
+
+        // 자동 해소 실패 → 안내 표시
+        const webUrl = input.replace('www.facebook.com', 'web.facebook.com')
+                            .replace('m.facebook.com', 'web.facebook.com');
+        document.getElementById('share-p-url').dataset.url = webUrl;
         sharePDiv.style.display = 'block';
         document.getElementById('share-p-hint').style.display = 'none';
         return;
