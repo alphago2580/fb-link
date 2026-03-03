@@ -1,9 +1,11 @@
 export default async function handler(req, res) {
-  const { url } = req.query;
-  if (!url) return res.status(400).send('Missing url');
+  const { url, mid } = req.query;
+  // mid: media_id 숫자만 받은 경우 (중첩 인코딩 방지용)
+  const targetUrl = url || (mid ? `https://lookaside.fbsbx.com/lookaside/crawler/media/?media_id=${mid}` : null);
+  if (!targetUrl) return res.status(400).send('Missing url or mid');
 
   try {
-    const imgRes = await fetch(url, {
+    const imgRes = await fetch(targetUrl, {
       headers: {
         'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
         'Referer': 'https://www.facebook.com/',

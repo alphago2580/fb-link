@@ -52,11 +52,17 @@ export default async function handler(req, res) {
 
   title = title || 'Facebook 게시물';
 
-  // lookaside 이미지는 카카오 크롤러가 못 읽음 → 우리 서버로 프록시
-  if (img && (img.includes('lookaside.fbsbx.com') || img.includes('fbsbx.com'))) {
+  // lookaside 이미지는 카카오 크롤러가 못 읽음 → 프록시
+  // media_id 숫자만 추출해서 깔끔한 URL 생성 (중첩 인코딩 문제 방지)
+  if (img && img.includes('fbsbx.com')) {
     const host = req.headers.host || '';
     const protocol = host.includes('localhost') ? 'http' : 'https';
-    img = `${protocol}://${host}/api/img?url=${encodeURIComponent(img)}`;
+    const midMatch = img.match(/media_id=(\d+)/);
+    if (midMatch) {
+      img = `${protocol}://${host}/api/img?mid=${midMatch[1]}`;
+    } else {
+      img = `${protocol}://${host}/api/img?url=${encodeURIComponent(img)}`;
+    }
   }
 
   const html = `<!DOCTYPE html>
