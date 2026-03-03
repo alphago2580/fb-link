@@ -232,7 +232,13 @@
           signal: AbortSignal.timeout(10000)
         });
         const d = await r.json();
-        if (d.title || d.img) return { title: d.title, img: d.img, desc: d.desc };
+
+        // share/p/ → canonical URL로 리다이렉트된 경우
+        if (d.resolvedOnly && d.canonical) {
+          return { resolved: d.canonical };
+        }
+
+        if (d.title || d.img) return { title: d.title, img: d.img };
       } catch(e) {}
       return {};
     }
@@ -279,6 +285,17 @@
       // 수동 입력 없으면 자동 추출 (title+img만, desc 제외)
       if (!manualTitle || !manualImg) {
         const og = await extractOG(input);
+
+        // share/p/ → canonical URL로 해소된 경우: 입력창 교체 후 재시도
+        if (og.resolved) {
+          document.getElementById('input').value = og.resolved;
+          btn.disabled = false;
+          btn.textContent = '변환하기';
+          document.getElementById('share-p-guide').style.display = 'none';
+          showError('✅ 링크가 자동으로 변환됐어요! 다시 "변환하기"를 눌러주세요.');
+          return;
+        }
+
         if (og.title && !manualTitle) params.set('title', og.title);
         if (og.img && !manualImg) params.set('img', og.img);
       }

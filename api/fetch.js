@@ -39,6 +39,8 @@ export default async function handler(req, res) {
     'LinkedInBot/1.0 (compatible; Mozilla/5.0; Jakarta Commons-HttpClient/3.1 +http://www.linkedin.com)',
   ];
 
+  const isSharePUrl = u => /facebook\.com\/share\/(p|v|r)\//.test(u);
+
   for (const ua of UAS) {
     try {
       const r = await fetch(url, {
@@ -51,18 +53,37 @@ export default async function handler(req, res) {
         signal: AbortSignal.timeout(7000),
       });
 
-      const html = await r.text();
-      if (isLoginPage(html)) continue;
+      // 최종 도착 URL (리다이렉트 후) — share/p/ → canonical URL로 바뀌었을 수 있음
+      const finalUrl = r.url || url;
+      const resolvedCanonical = (isSharePUrl(url) && !isSharePUrl(finalUrl)) ? finalUrl : null;
 
+      const html = await r.text();
+
+      // OG 데이터 추출
       const og = parseOG(html);
-      if (og.title || og.img) {
-        return res.status(200).json({ ...og, ua });
+
+      // canonical URL을 HTML에서도 찾기
+      const canonical = resolvedCanonical
+        || og.canonical
+        || (html.match(/property="og:url"[^>]*content="([^"]*)"/i) || [])[1]
+        || '';
+
+      // 로그인 페이지지만 canonical URL은 얻었을 수 있음
+      if (isLoginPage(html)) {
+        if (resolvedCanonical) {
+          // canonical URL만 반환 (OG는 없어도 URL은 건짐)
+          return res.status(200).json({ title: '', img: '', desc: '', canonical: resolvedCanonical, ua, resolvedOnly: true });
+        }
+        continue;
+      }
+
+      if (og.title || og.img || canonical) {
+        return res.status(200).json({ ...og, canonical, ua });
       }
     } catch(e) {
       continue;
     }
   }
 
-  // 모든 UA 실패
   return res.status(200).json({ title: '', img: '', desc: '', canonical: '', error: 'blocked' });
 }
