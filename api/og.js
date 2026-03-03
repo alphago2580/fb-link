@@ -1,6 +1,27 @@
+// 허용 도메인 (SSRF 방지)
+const ALLOWED_HOSTS = [
+  'facebook.com', 'www.facebook.com', 'm.facebook.com',
+  'fb.com', 'web.facebook.com',
+];
+
+function isAllowedUrl(rawUrl) {
+  try {
+    const u = new URL(rawUrl);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false; // javascript: 등 차단
+    return ALLOWED_HOSTS.some(h => u.hostname === h || u.hostname.endsWith('.' + h));
+  } catch {
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
   const { url, title: pTitle, desc: pDesc, img: pImg } = req.query;
   if (!url) return res.status(400).send('Missing url parameter');
+
+  // SSRF + XSS(javascript:) 방지
+  if (!isAllowedUrl(url)) {
+    return res.status(400).send('Invalid url: only Facebook URLs are allowed');
+  }
 
   const escape = (s) =>
     String(s || '')
@@ -46,7 +67,7 @@ export default async function handler(req, res) {
       if (isLoginPage(html)) {
         try {
           const nextUrl = new URL(finalUrl).searchParams.get('next');
-          if (nextUrl && nextUrl.includes('facebook.com')) {
+          if (nextUrl && isAllowedUrl(nextUrl)) {
             const r2 = await fbFetch(nextUrl);
             if (!isLoginPage(r2.html)) html = r2.html;
           }
@@ -71,7 +92,6 @@ export default async function handler(req, res) {
   title = title || 'Facebook 게시물';
 
   // lookaside 이미지는 카카오 크롤러가 못 읽음 → 프록시
-  // media_id 숫자만 추출해서 깔끔한 URL 생성 (중첩 인코딩 문제 방지)
   if (img && img.includes('fbsbx.com')) {
     const host = req.headers.host || '';
     const protocol = host.includes('localhost') ? 'http' : 'https';
