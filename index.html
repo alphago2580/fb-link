@@ -111,6 +111,7 @@
     <div class="logo">🔗</div>
     <h1>Facebook 링크 변환기</h1>
     <p class="subtitle">카카오톡에 공유할 때 썸네일이 안 나오는 경우, 아래에서 변환하면 <strong>썸네일이 보이는 링크</strong>로 만들 수 있어요.</p>
+    <div style="font-size:11px;color:#ccc;text-align:right;margin-top:-20px;margin-bottom:16px;">v2026.03.03</div>
 
     <!-- ① 북마클릿 방법 (추천) -->
     <div class="section-title">🔖 북마클릿 <span class="badge badge-green">추천</span></div>
@@ -244,11 +245,9 @@
         const d = await r.json();
 
         // share/p/ → canonical URL로 리다이렉트된 경우
-        if (d.resolvedOnly && d.canonical) {
-          return { resolved: d.canonical };
+        if (d.title || d.img || d.canonical) {
+          return { title: d.title, img: d.img, canonical: d.canonical };
         }
-
-        if (d.title || d.img) return { title: d.title, img: d.img };
       } catch(e) {}
       return {};
     }
@@ -287,13 +286,12 @@
         btn.disabled = false;
         btn.textContent = '변환하기';
 
-        if (og.resolved || og.title || og.img) {
-          // OG 데이터 or canonical URL 확보 → 바로 변환
-          const targetUrl = og.resolved || input;
+        if (og.resolved || og.title || og.canonical) {
+          // canonical URL 사용, img는 서버가 직접 fetch
+          const targetUrl = og.canonical || og.resolved || input;
           const params = new URLSearchParams({ url: targetUrl });
           if (og.title) params.set('title', og.title);
-          if (og.img) params.set('img', og.img);
-          // desc 제외 (URL 길이 절약)
+          // img 제외 → og.js 서버에서 직접 가져옴 (URL 단축)
           const proxyUrl = VERCEL_BASE + '?' + params.toString();
           document.getElementById('result-url').textContent = proxyUrl;
           resultDiv.style.display = 'block';
@@ -420,10 +418,10 @@
           document.getElementById('share-copy-btn').disabled = true;
 
           extractOG(finalUrl).then(og => {
-            let targetUrl = og.resolved || finalUrl;
+            const targetUrl = og.canonical || og.resolved || finalUrl;
             const params = new URLSearchParams({ url: targetUrl });
             if (og.title) params.set('title', og.title);
-            if (og.img) params.set('img', og.img);
+            // img 제외 → og.js 서버에서 직접 fetch
             shareProxyUrl = VERCEL_BASE + '?' + params.toString();
             document.getElementById('share-url').textContent = shareProxyUrl;
             document.getElementById('share-copy-btn').disabled = false;

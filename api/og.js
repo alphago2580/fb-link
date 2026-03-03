@@ -23,8 +23,8 @@ export default async function handler(req, res) {
   let desc = pDesc || '';
   let img = pImg || '';
 
-  // 파라미터 없을 때만 서버 fetch 시도 (클라우드 IP 차단될 수 있음)
-  if (!title && !img) {
+  // img 없으면 서버에서 fetch해서 img 획득 (title은 파라미터 우선)
+  if (!img) {
     try {
       const fbRes = await fetch(url, {
         headers: {
