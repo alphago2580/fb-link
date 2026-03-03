@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Facebook 링크 변환기</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1877f2">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="FB변환기">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -239,6 +244,22 @@
     document.getElementById('input').addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); convert(); }
     });
+
+    // PWA Share Target: ?fburl=... 로 공유받으면 자동 변환
+    (function() {
+      const p = new URLSearchParams(window.location.search);
+      const shared = p.get('fburl');
+      if (shared && shared.includes('facebook.com')) {
+        document.getElementById('input').value = shared;
+        convert();
+        window.history.replaceState({}, '', '/');
+      }
+    })();
+
+    // 서비스워커 등록
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
   </script>
 </body>
 </html>
