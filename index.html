@@ -167,16 +167,30 @@
       const base = VERCEL_BASE;
       const bmCode = `javascript:(function(){` +
         `var u=window.location.href;` +
-        `if(!u.includes('facebook.com')){alert('Facebook 페이지에서 사용해주세요!');return;}` +
+        `if(!u.includes('facebook.com'))return;` +
         `var g=function(p){var el=document.querySelector('meta[property="'+p+'"]');return el?el.getAttribute('content'):'';};` +
         `var title=g('og:title')||document.title||'Facebook 게시물';` +
         `var desc=g('og:description')||'';` +
         `var img=g('og:image')||'';` +
         `var params=new URLSearchParams({url:u,title:title,desc:desc,img:img});` +
         `var proxy='${base}?'+params.toString();` +
-        `navigator.clipboard.writeText(proxy)` +
-        `.then(function(){alert('\\u2705 복사됨!\\n카카오톡에 붙여넣기 하세요.');})` +
-        `.catch(function(){prompt('이 링크를 복사하세요:',proxy);});` +
+        // 알림: alert() 차단 우회 — DOM에 직접 토스트 삽입
+        `var toast=function(ok){` +
+          `var d=document.createElement('div');` +
+          `d.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#23272f;color:#fff;padding:13px 22px;border-radius:12px;z-index:2147483647;font-size:14px;font-family:sans-serif;box-shadow:0 4px 20px rgba(0,0,0,0.4);white-space:nowrap;pointer-events:none';` +
+          `d.textContent=ok?'\\u2705 복사됨! 카카오톡에 붙여넣기':'\\u26a0\\ufe0f 복사 실패 — 직접 복사해주세요';` +
+          `document.body.appendChild(d);` +
+          `setTimeout(function(){if(d.parentNode)d.parentNode.removeChild(d);},3000);` +
+        `};` +
+        // 클립보드: execCommand 우선(CSP 우회), navigator.clipboard 폴백
+        `var ta=document.createElement('textarea');` +
+        `ta.value=proxy;ta.style.cssText='position:fixed;opacity:0;top:0;left:0;width:1px;height:1px';` +
+        `document.body.appendChild(ta);ta.focus();ta.select();` +
+        `var ok=false;try{ok=document.execCommand('copy');}catch(e){}` +
+        `document.body.removeChild(ta);` +
+        `if(ok){toast(true);}else{` +
+          `navigator.clipboard.writeText(proxy).then(function(){toast(true);}).catch(function(){toast(false);});` +
+        `}` +
         `})();`;
       document.getElementById('bookmarklet').href = bmCode;
     });
