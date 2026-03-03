@@ -55,32 +55,39 @@ export default async function handler(req, res) {
         signal: AbortSignal.timeout(7000),
       });
 
-      // 최종 도착 URL (리다이렉트 후) — share/p/ → canonical URL로 바뀌었을 수 있음
       const finalUrl = r.url || url;
-      const resolvedCanonical = (isSharePUrl(url) && !isSharePUrl(finalUrl)) ? finalUrl : null;
-
       const html = await r.text();
 
-      // OG 데이터 추출
-      const og = parseOG(html);
-
-      // canonical URL을 HTML에서도 찾기
-      const canonical = resolvedCanonical
-        || og.canonical
-        || (html.match(/property="og:url"[^>]*content="([^"]*)"/i) || [])[1]
-        || '';
-
-      // 로그인 페이지지만 canonical URL은 얻었을 수 있음
+      // 로그인 페이지로 리다이렉트된 경우 → next= 파라미터에서 실제 URL 추출 후 재시도
       if (isLoginPage(html)) {
-        if (resolvedCanonical) {
-          // canonical URL만 반환 (OG는 없어도 URL은 건짐)
-          return res.status(200).json({ title: '', img: '', desc: '', canonical: resolvedCanonical, ua, resolvedOnly: true });
-        }
+        try {
+          const loginUrl = new URL(finalUrl);
+          const nextUrl = loginUrl.searchParams.get('next');
+          if (nextUrl && nextUrl.includes('facebook.com')) {
+            // next URL로 OG 재시도 (facebookexternalhit UA)
+            const r2 = await fetch(nextUrl, {
+              headers: {
+                'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+                'Accept-Language': 'ko-KR,ko;q=0.9,en;q=0.8',
+              },
+              redirect: 'follow',
+              signal: AbortSignal.timeout(7000),
+            });
+            const html2 = await r2.text();
+            if (!isLoginPage(html2)) {
+              const og2 = parseOG(html2);
+              if (og2.title || og2.img) {
+                return res.status(200).json({ ...og2, canonical: nextUrl, ua });
+              }
+            }
+          }
+        } catch(e) {}
         continue;
       }
 
-      if (og.title || og.img || canonical) {
-        return res.status(200).json({ ...og, canonical, ua });
+      const og = parseOG(html);
+      if (og.title || og.img) {
+        return res.status(200).json({ ...og, canonical: finalUrl, ua });
       }
     } catch(e) {
       continue;
