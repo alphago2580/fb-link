@@ -275,26 +275,12 @@
       const manualImg = document.getElementById('manualImg').value.trim();
       const manualDesc = document.getElementById('manualDesc').value.trim();
 
-      const btn = document.querySelector('.main-btn');
-      btn.disabled = true;
-      btn.textContent = '🔍 정보 추출 중...';
-
       const params = new URLSearchParams({ url: input });
 
-      // 수동 입력이 없으면 자동 추출 시도
-      if (!manualTitle || !manualImg) {
-        const og = await extractOG(input);
-        if (og.title && !manualTitle) params.set('title', og.title);
-        if (og.img && !manualImg) params.set('img', og.img);
-        if (og.desc && !manualDesc) params.set('desc', og.desc);
-      }
-
+      // 수동 입력한 경우만 파라미터 추가 (서버가 알아서 OG 추출)
       if (manualTitle) params.set('title', manualTitle);
       if (manualImg) params.set('img', manualImg);
       if (manualDesc) params.set('desc', manualDesc);
-
-      btn.disabled = false;
-      btn.textContent = '변환하기';
 
       const proxyUrl = VERCEL_BASE + '?' + params.toString();
       document.getElementById('result-url').textContent = proxyUrl;
