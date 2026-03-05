@@ -8,8 +8,10 @@ export default async function handler(req, res) {
 
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: 'Missing url' });
-  if (!url.includes('facebook.com') && !url.includes('fb.me') && !url.includes('fb.watch')) {
-    return res.status(400).json({ error: 'Not a Facebook URL' });
+  const isFbUrl = u => u.includes('facebook.com') || u.includes('fb.me') || u.includes('fb.watch');
+  const isIgUrl = u => u.includes('instagram.com');
+  if (!isFbUrl(url) && !isIgUrl(url)) {
+    return res.status(400).json({ error: 'Not a Facebook or Instagram URL' });
   }
 
   const unesc = s => String(s || '')
@@ -33,7 +35,12 @@ export default async function handler(req, res) {
   const isLoginPage = html =>
     /login|checkpoint|로그인\s*또는\s*가입/i.test(html.slice(0, 3000));
 
-  const UAS = [
+  const UAS = isIgUrl(url) ? [
+    'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    'Mozilla/5.0 (compatible; Twitterbot/1.0)',
+    'Facebot Twitterbot/1.0',
+  ] : [
     'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
     'Facebot Twitterbot/1.0',
     'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',

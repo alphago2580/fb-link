@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Facebook 링크 변환기</title>
+  <title>FB/IG 링크 변환기</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#1877f2">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="FB변환기">
+  <meta name="apple-mobile-web-app-title" content="링크변환기">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -38,17 +38,27 @@
       font-size: 14px; outline: none;
       transition: border-color 0.2s; color: #1a1a1a; font-family: inherit;
     }
-    input:focus, textarea:focus { border-color: #1877f2; }
+    input:focus, textarea:focus { border-color: var(--accent, #1877f2); }
+    .platform-fb { --accent: #1877f2; }
+    .platform-ig { --accent: #c13584; }
     textarea { resize: none; height: 80px; }
     .field { margin-bottom: 12px; }
     button.main-btn {
       width: 100%; margin-top: 4px; padding: 13px;
-      background: #1877f2; color: white;
+      background: var(--btn-bg, #1877f2); color: white;
       border: none; border-radius: 10px;
       font-size: 15px; font-weight: 600; cursor: pointer;
       transition: background 0.2s;
     }
-    button.main-btn:hover { background: #1560cc; }
+    button.main-btn:hover { background: var(--btn-hover, #1560cc); }
+    .platform-ig button.main-btn { --btn-bg: #c13584; --btn-hover: #a12d70; }
+    .platform-ig .result-box { background: #fdf0f8; border-color: #e8b4d8; }
+    .platform-ig .result-url { color: #a12d70; }
+    .platform-ig .copy-btn { background: #c13584; }
+    .platform-ig .copy-btn:hover { background: #a12d70; }
+    .platform-ig .bookmarklet-btn { background: #fdf0f8; border-color: #c13584; color: #c13584; }
+    .platform-ig .bookmarklet-btn:hover { background: #f5d5eb; }
+    .platform-ig .badge { background: #fdf0f8; color: #c13584; }
     .result { margin-top: 20px; display: none; }
     .result-box {
       display: flex; align-items: center; gap: 8px;
@@ -109,18 +119,18 @@
 <body>
   <div class="card">
     <div class="logo">🔗</div>
-    <h1>Facebook 링크 변환기</h1>
+    <h1 id="main-title">Facebook / Instagram 링크 변환기</h1>
     <p class="subtitle">카카오톡에 공유할 때 썸네일이 안 나오는 경우, 아래에서 변환하면 <strong>썸네일이 보이는 링크</strong>로 만들 수 있어요.</p>
-    <div style="font-size:11px;color:#ccc;text-align:right;margin-top:-20px;margin-bottom:16px;">v2026.03.03</div>
+    <div style="font-size:11px;color:#ccc;text-align:right;margin-top:-20px;margin-bottom:16px;">v2026.03.05</div>
 
     <!-- ① 북마클릿 방법 (추천) -->
     <div class="section-title">🔖 북마클릿 <span class="badge badge-green">추천</span></div>
-    <p class="section-sub">PC 브라우저에서 페이스북 게시물 열고 버튼 한 번 — 제일 정확해요.</p>
-    <a id="bookmarklet" class="bookmarklet-btn" href="#">📋 FB→카톡 변환</a>
+    <p class="section-sub" id="bm-sub">PC 브라우저에서 페이스북/인스타그램 게시물 열고 버튼 한 번 — 제일 정확해요.</p>
+    <a id="bookmarklet" class="bookmarklet-btn" href="#">📋 FB/IG→카톡 변환</a>
     <ol class="steps">
       <li>위 버튼을 <strong>북마크 바로 드래그</strong>해서 설치</li>
-      <li>페이스북에서 공유할 게시물 열기</li>
-      <li><strong>FB→카톡 변환</strong> 클릭 → 링크 자동 복사</li>
+      <li>페이스북 또는 인스타그램에서 공유할 게시물 열기</li>
+      <li><strong>FB/IG→카톡 변환</strong> 클릭 → 링크 자동 복사</li>
       <li>카카오톡에 붙여넣기</li>
     </ol>
     <div class="tip" style="margin-top:14px;">
@@ -135,8 +145,8 @@
     <p class="section-sub">모바일이거나 북마클릿이 불편한 경우 — URL과 정보를 직접 입력하세요.</p>
 
     <div class="field">
-      <label>Facebook 게시물 링크 *</label>
-      <textarea id="input" placeholder="https://www.facebook.com/permalink.php?story_fbid=...&#10;https://www.facebook.com/share/p/..."></textarea>
+      <label id="input-label">Facebook / Instagram 게시물 링크 *</label>
+      <textarea id="input" placeholder="https://www.facebook.com/share/p/...&#10;https://www.instagram.com/p/...&#10;https://www.instagram.com/reel/..."></textarea>
     </div>
 
     <details>
@@ -210,12 +220,34 @@
   <script>
     const VERCEL_BASE = window.location.origin + '/api/og';
 
-    // 북마클릿 코드 설정 (페이스북 DOM에서 OG 직접 추출 → URL 파라미터로 포함)
+    // 플랫폼 감지
+    function detectPlatform(url) {
+      if (!url) return 'fb';
+      if (url.includes('instagram.com')) return 'ig';
+      return 'fb';
+    }
+
+    function applyPlatformTheme(platform) {
+      const card = document.querySelector('.card');
+      card.classList.remove('platform-fb', 'platform-ig');
+      card.classList.add('platform-' + platform);
+      const isIg = platform === 'ig';
+      document.getElementById('main-title').textContent = isIg
+        ? 'Instagram 링크 변환기'
+        : 'Facebook / Instagram 링크 변환기';
+    }
+
+    document.getElementById('input').addEventListener('input', function() {
+      const url = this.value.trim();
+      applyPlatformTheme(detectPlatform(url));
+    });
+
+    // 북마클릿 코드 설정 (Facebook/Instagram DOM에서 OG 직접 추출 → URL 파라미터로 포함)
     document.addEventListener('DOMContentLoaded', () => {
       const base = VERCEL_BASE;
       const bmCode = `javascript:(function(){` +
         `var u=window.location.href;` +
-        `if(!u.includes('facebook.com'))return;` +
+        `if(!u.includes('facebook.com')&&!u.includes('instagram.com'))return;` +
         `var g=function(p){var el=document.querySelector('meta[property="'+p+'"]');return el?el.getAttribute('content'):'';};` +
         `var proxy='${base}?url='+encodeURIComponent(u);` +
         `var toast=function(ok){` +
@@ -300,7 +332,9 @@
       sharePDiv.style.display = 'none';
 
       if (!input) { showError('링크를 입력해주세요.'); return; }
-      if (!input.includes('facebook.com')) { showError('Facebook 링크가 아닌 것 같아요.'); return; }
+      const isFb = input.includes('facebook.com') || input.includes('fb.me') || input.includes('fb.watch');
+      const isIg = input.includes('instagram.com');
+      if (!isFb && !isIg) { showError('Facebook 또는 Instagram 링크가 아닌 것 같아요.'); return; }
 
       const btn = document.querySelector('.main-btn');
 
@@ -407,7 +441,7 @@
         if (!candidates.length) return;
 
         // URL처럼 생긴 것 or facebook 포함된 것 우선
-        const isFbUrl = s => /facebook\.com|fb\.com/i.test(s);
+        const isFbUrl = s => /facebook\.com|fb\.com|instagram\.com/i.test(s);
         const shared = candidates.find(isFbUrl) || candidates[0];
         if (!shared) return;
 
