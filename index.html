@@ -245,34 +245,11 @@
     // 북마클릿 코드 설정 (Facebook/Instagram DOM에서 OG 직접 추출 → URL 파라미터로 포함)
     document.addEventListener('DOMContentLoaded', () => {
       const base = VERCEL_BASE;
+      const siteBase = base.replace('/api/og', '');
       const bmCode = `javascript:(function(){` +
         `var u=window.location.href;` +
         `if(!u.includes('facebook.com')&&!u.includes('instagram.com'))return;` +
-        `var toast=function(msg){` +
-          `var d=document.createElement('div');` +
-          `d.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#23272f;color:#fff;padding:13px 22px;border-radius:12px;z-index:2147483647;font-size:14px;font-family:sans-serif;box-shadow:0 4px 20px rgba(0,0,0,0.4);white-space:nowrap;pointer-events:none';` +
-          `d.textContent=msg;document.body.appendChild(d);` +
-          `setTimeout(function(){if(d.parentNode)d.parentNode.removeChild(d);},3500);` +
-        `};` +
-        `var copy=function(txt){` +
-          `return navigator.clipboard?navigator.clipboard.writeText(txt):new Promise(function(res,rej){` +
-            `var ta=document.createElement('textarea');ta.value=txt;` +
-            `ta.style.cssText='position:fixed;opacity:0;top:0;left:0;width:1px;height:1px';` +
-            `document.body.appendChild(ta);ta.focus();ta.select();` +
-            `var ok=false;try{ok=document.execCommand('copy');}catch(e){}` +
-            `document.body.removeChild(ta);` +
-            `ok?res():rej();` +
-          `});` +
-        `};` +
-        `toast('\\u23f3 링크 변환 중...');` +
-        `fetch('${base.replace('/api/og','/api/shorten')}?url='+encodeURIComponent(u))` +
-          `.then(function(r){return r.json();})` +
-          `.then(function(d){` +
-            `var url=d.shortUrl||d.url||'';` +
-            `if(!url)throw new Error('no url');` +
-            `return copy(url).then(function(){toast('\\u2705 복사됨! 카카오톡에 붙여넣기');});` +
-          `})` +
-          `.catch(function(){toast('\\u26a0\\ufe0f 실패 — 홈에서 수동 입력해주세요');});` +
+        `window.open('${siteBase}?bm=1&url='+encodeURIComponent(u),'_blank');` +
         `})();`;
       document.getElementById('bookmarklet').href = bmCode;
     });
@@ -491,6 +468,49 @@
           document.getElementById('share-url').textContent = '🔍 정보 추출 중...';
         }
       } catch(e) {}
+    })();
+
+    // 북마클릿 자동 변환 (?bm=1&url=...)
+    (async function() {
+      try {
+        const p = new URLSearchParams(window.location.search);
+        if (!p.get('bm') || !p.get('url')) return;
+        const url = p.get('url');
+        window.history.replaceState({}, '', '/');
+
+        // 플랫폼 테마 적용
+        applyPlatformTheme(detectPlatform(url));
+
+        const btn = document.querySelector('.main-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>변환 중...';
+        document.querySelector('.card').scrollIntoView();
+
+        const r = await fetch(`/api/shorten?url=${encodeURIComponent(url)}`, {
+          signal: AbortSignal.timeout(12000)
+        });
+        const d = await r.json();
+        const shortUrl = d.shortUrl || '';
+        if (!shortUrl) throw new Error('no url');
+
+        btn.disabled = false;
+        btn.textContent = '변환하기';
+
+        document.getElementById('result-url').textContent = shortUrl;
+        document.getElementById('result').style.display = 'block';
+
+        // 자동 복사 시도
+        try {
+          await navigator.clipboard.writeText(shortUrl);
+          document.getElementById('copy-btn').textContent = '복사됨! ✅';
+          setTimeout(() => { document.getElementById('copy-btn').textContent = '복사'; }, 2000);
+        } catch(e) {}
+      } catch(e) {
+        const btn = document.querySelector('.main-btn');
+        btn.disabled = false;
+        btn.textContent = '변환하기';
+        showError('변환 실패 — URL을 직접 입력해 주세요.');
+      }
     })();
 
     // 서비스워커 등록
