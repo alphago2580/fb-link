@@ -467,16 +467,19 @@
             document.getElementById('share-copy-btn').disabled = false;
           });
         } else {
-          // 일반 canonical URL
-          const params = new URLSearchParams({ url: finalUrl });
-          extractOG(finalUrl).then(og => {
-            if (og.title) params.set('title', og.title);
-            if (og.img) params.set('img', og.img);
-            shareProxyUrl = VERCEL_BASE + '?' + params.toString();
-            document.getElementById('share-url').textContent = shareProxyUrl;
-          });
-          shareProxyUrl = VERCEL_BASE + '?url=' + encodeURIComponent(finalUrl);
+          // 일반 canonical URL → saveLink()로 단축 URL 생성
           document.getElementById('share-url').textContent = '🔍 정보 추출 중...';
+          document.getElementById('share-copy-btn').disabled = true;
+
+          extractOG(finalUrl).then(async og => {
+            shareProxyUrl = await saveLink(finalUrl, og.title, og.img);
+            document.getElementById('share-url').textContent = shareProxyUrl;
+            document.getElementById('share-copy-btn').disabled = false;
+          }).catch(async () => {
+            shareProxyUrl = await saveLink(finalUrl, '', '');
+            document.getElementById('share-url').textContent = shareProxyUrl;
+            document.getElementById('share-copy-btn').disabled = false;
+          });
         }
       } catch(e) {}
     })();
