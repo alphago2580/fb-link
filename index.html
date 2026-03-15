@@ -267,12 +267,12 @@
 
     const SHORT_BASE = window.location.origin + '/api/s/';
 
-    async function saveLink(url, title, img) {
+    async function saveLink(url, title, img, desc) {
       try {
         const r = await fetch('/api/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url, title, img }),
+          body: JSON.stringify({ url, title, img, desc }),
           signal: AbortSignal.timeout(5000),
         });
         const d = await r.json();
@@ -282,6 +282,7 @@
       const params = new URLSearchParams({ url });
       if (title) params.set('title', title);
       if (img) params.set('img', img);
+      if (desc) params.set('desc', desc);
       return VERCEL_BASE + '?' + params.toString();
     }
 
@@ -300,7 +301,7 @@
             const mid = img.match(/media_id=(\d+)/);
             img = mid ? `${window.location.origin}/api/img?mid=${mid[1]}` : img;
           }
-          return { title: d.title, img, canonical: d.canonical };
+          return { title: d.title, img, canonical: d.canonical, desc: d.desc || '' };
         }
       } catch(e) {}
       return {};
@@ -334,6 +335,10 @@
 
       const btn = document.querySelector('.main-btn');
 
+      const manualTitle = document.getElementById('manualTitle').value.trim();
+      const manualImg = document.getElementById('manualImg').value.trim();
+      const manualDesc = document.getElementById('manualDesc').value.trim();
+
       // share/p/ 형식 감지 → 자동 해소 먼저 시도
       if (isSharePUrl(input)) {
         btn.disabled = true;
@@ -344,7 +349,11 @@
 
         if (og.resolved || og.title || og.canonical) {
           const targetUrl = og.canonical || og.resolved || input;
-          const proxyUrl = await saveLink(targetUrl, og.title, og.img);
+          // 수동 입력값 우선, 없으면 자동 추출값 사용
+          const finalTitle = manualTitle || og.title;
+          const finalImg   = manualImg   || og.img;
+          const finalDesc  = manualDesc  || og.desc || '';
+          const proxyUrl = await saveLink(targetUrl, finalTitle, finalImg, finalDesc);
           document.getElementById('result-url').textContent = proxyUrl;
           resultDiv.style.display = 'block';
           return;
@@ -359,23 +368,21 @@
         return;
       }
 
-      const manualTitle = document.getElementById('manualTitle').value.trim();
-      const manualImg = document.getElementById('manualImg').value.trim();
-
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>변환 중...';
 
-      let ogTitle = manualTitle, ogImg = manualImg;
-      if (!manualTitle || !manualImg) {
+      let ogTitle = manualTitle, ogImg = manualImg, ogDesc = manualDesc;
+      if (!manualTitle || !manualImg || !manualDesc) {
         const og = await extractOG(input);
         if (og.title && !manualTitle) ogTitle = og.title;
-        if (og.img && !manualImg) ogImg = og.img;
+        if (og.img   && !manualImg)   ogImg   = og.img;
+        if (og.desc  && !manualDesc)  ogDesc  = og.desc;
       }
 
       btn.disabled = false;
       btn.innerHTML = '변환하기';
 
-      const proxyUrl = await saveLink(input, ogTitle, ogImg);
+      const proxyUrl = await saveLink(input, ogTitle, ogImg, ogDesc);
       document.getElementById('result-url').textContent = proxyUrl;
       resultDiv.style.display = 'block';
     }

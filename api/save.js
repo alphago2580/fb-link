@@ -1,11 +1,11 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { url, title, img } = req.body || {};
+  const { url, title, img, desc } = req.body || {};
   if (!url) return res.status(400).json({ error: 'url required' });
 
   const id = Math.random().toString(36).slice(2, 8);
-  const data = JSON.stringify({ url, title: title || '', img: img || '' });
+  const data = JSON.stringify({ url, title: title || '', img: img || '', desc: desc || '' });
 
   const r = await fetch(process.env.UPSTASH_REDIS_REST_URL, {
     method: 'POST',
