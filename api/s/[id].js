@@ -17,14 +17,19 @@ export default async function handler(req, res) {
 
   let { url, title, img, desc } = JSON.parse(result.result);
 
-  // scontent 이미지 → /api/img?url= 프록시 (만료 토큰 우회)
-  if (img && img.includes('fbcdn.net')) {
-    const host = req.headers.host || '';
-    const proto = host.includes('localhost') ? 'http' : 'https';
+  const host = req.headers.host || '';
+  const proto = host.includes('localhost') ? 'http' : 'https';
+  // fbcdn/fbsbx 이미지 → 프록시 (만료 토큰·크롤러 차단 우회)
+  if (img && img.includes('fbsbx.com')) {
+    const mid = img.match(/media_id=(\d+)/);
+    img = mid
+      ? `${proto}://${host}/api/img?mid=${mid[1]}`
+      : `${proto}://${host}/api/img?url=${encodeURIComponent(img)}`;
+  } else if (img && img.includes('fbcdn.net')) {
     img = `${proto}://${host}/api/img?url=${encodeURIComponent(img)}`;
   }
 
-  title = title || 'Facebook 게시물';
+  title = title || '링크 미리보기';
   desc = desc || '';
 
   const escape = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -46,7 +51,7 @@ export default async function handler(req, res) {
 </head>
 <body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#f0f2f5;margin:0;">
   <div style="text-align:center;color:#666;">
-    <p>페이스북으로 이동 중...</p>
+    <p>원문 페이지로 이동 중...</p>
     <a href="${escape(url)}" style="color:#1877f2;font-size:14px;">바로가기</a>
   </div>
 </body>

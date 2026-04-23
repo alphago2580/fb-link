@@ -2,17 +2,25 @@
 // 북마클릿용 통합 엔드포인트: 크롤 + Redis 저장 + 단축 URL 반환
 // CORS 허용 (Facebook/Instagram 페이지에서 fetch 가능)
 
-const ALLOWED_HOSTS = [
-  'facebook.com', 'www.facebook.com', 'm.facebook.com',
-  'fb.com', 'web.facebook.com', 'fb.me', 'fb.watch',
-  'instagram.com', 'www.instagram.com',
-];
-
-function isAllowedUrl(rawUrl) {
+// SSRF 방지: 사설/루프백 주소 차단, 공개 http(s) URL은 모두 허용
+function isSafeUrl(rawUrl) {
   try {
     const u = new URL(rawUrl);
     if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
-    return ALLOWED_HOSTS.some(h => u.hostname === h || u.hostname.endsWith('.' + h));
+    const h = u.hostname.toLowerCase();
+    if (!h) return false;
+    if (h === 'localhost' || h === '0.0.0.0' || h === '::1' || h === '[::1]') return false;
+    const ipv4 = h.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+    if (ipv4) {
+      const a = +ipv4[1], b = +ipv4[2];
+      if (a === 10 || a === 127) return false;
+      if (a === 169 && b === 254) return false;
+      if (a === 172 && b >= 16 && b <= 31) return false;
+      if (a === 192 && b === 168) return false;
+      if (a === 0 || a >= 224) return false;
+    }
+    if (/^(fc|fd|fe80)/.test(h)) return false;
+    return true;
   } catch { return false; }
 }
 
@@ -23,9 +31,10 @@ export default async function handler(req, res) {
 
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: 'Missing url' });
-  if (!isAllowedUrl(url)) return res.status(400).json({ error: 'Not an allowed URL' });
+  if (!isSafeUrl(url)) return res.status(400).json({ error: 'Invalid url' });
 
   const isIgUrl = u => u.includes('instagram.com');
+  const isFbUrl = u => u.includes('facebook.com') || u.includes('fb.me') || u.includes('fb.watch');
 
   const unesc = s => String(s || '')
     .replace(/&#x([0-9a-fA-F]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
@@ -40,18 +49,28 @@ export default async function handler(req, res) {
     return { title: unesc(m('og:title')), img: unesc(m('og:image')), desc: unesc(m('og:description')) };
   };
 
+  const parseFallbackTitle = html => {
+    const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    return m ? unesc(m[1]).trim() : '';
+  };
+
   const UAS = isIgUrl(url) ? [
     'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
     'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
     'Mozilla/5.0 (compatible; Twitterbot/1.0)',
-  ] : [
+  ] : isFbUrl(url) ? [
     'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
     'Facebot Twitterbot/1.0',
     'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
     'Mozilla/5.0 (compatible; Twitterbot/1.0)',
+  ] : [
+    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    'Mozilla/5.0 (compatible; Twitterbot/1.0)',
+    'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
   ];
 
-  let title = '', img = '';
+  let title = '', img = '', desc = '';
 
   for (const ua of UAS) {
     try {
@@ -66,7 +85,12 @@ export default async function handler(req, res) {
       });
       const html = await r.text();
       const og = parseOG(html);
-      if (og.title || og.img) { title = og.title; img = og.img; break; }
+      if (og.title || og.img) { title = og.title; img = og.img; desc = og.desc; break; }
+      // OG 태그 없으면 <title>이라도 챙기기
+      if (!title) {
+        const t = parseFallbackTitle(html);
+        if (t) title = t;
+      }
     } catch(e) { continue; }
   }
 
@@ -79,13 +103,14 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(['SET', `fl:${id}`, JSON.stringify({ url, title, img }), 'EX', '604800']),
+      body: JSON.stringify(['SET', `fl:${id}`, JSON.stringify({ url, title, img, desc }), 'EX', '604800']),
     });
   } catch(e) {
     // Redis 실패 시 og 방식으로 폴백
     const params = new URLSearchParams({ url });
     if (title) params.set('title', title);
     if (img) params.set('img', img);
+    if (desc) params.set('desc', desc);
     const host = req.headers.host || '';
     const proto = host.includes('localhost') ? 'http' : 'https';
     return res.json({ shortUrl: `${proto}://${host}/api/og?${params}` });

@@ -1,19 +1,25 @@
-// 허용 도메인 (SSRF 방지)
-const ALLOWED_IMG_HOSTS = [
-  'fbsbx.com', 'lookaside.fbsbx.com',
-  'scontent.fbcdn.net', 'fbcdn.net',
-  'cdninstagram.com', 'scontent.cdninstagram.com',
-  'external.fbcdn.net',
-];
-
 const ALLOWED_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
-function isAllowedImgUrl(rawUrl) {
+// SSRF 방지: 사설/루프백 주소 차단, 공개 http(s) 이미지는 모두 허용
+function isSafeImgUrl(rawUrl) {
   try {
     const u = new URL(rawUrl);
     if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
-    return ALLOWED_IMG_HOSTS.some(h => u.hostname === h || u.hostname.endsWith('.' + h));
+    const h = u.hostname.toLowerCase();
+    if (!h) return false;
+    if (h === 'localhost' || h === '0.0.0.0' || h === '::1' || h === '[::1]') return false;
+    const ipv4 = h.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+    if (ipv4) {
+      const a = +ipv4[1], b = +ipv4[2];
+      if (a === 10 || a === 127) return false;
+      if (a === 169 && b === 254) return false;
+      if (a === 172 && b >= 16 && b <= 31) return false;
+      if (a === 192 && b === 168) return false;
+      if (a === 0 || a >= 224) return false;
+    }
+    if (/^(fc|fd|fe80)/.test(h)) return false;
+    return true;
   } catch {
     return false;
   }
@@ -33,16 +39,19 @@ export default async function handler(req, res) {
 
   if (!targetUrl) return res.status(400).send('Missing url or mid');
 
-  // SSRF 방지: 허용된 Facebook CDN 도메인만 fetch
-  if (!isAllowedImgUrl(targetUrl)) {
-    return res.status(400).send('Invalid url: only Facebook CDN URLs are allowed');
+  if (!isSafeImgUrl(targetUrl)) {
+    return res.status(400).send('Invalid url');
   }
 
   try {
+    const isFbCdn = /(^|\.)fb(sbx|cdn)\.(com|net)$|(^|\.)cdninstagram\.com$/.test(new URL(targetUrl).hostname);
     const imgRes = await fetch(targetUrl, {
-      headers: {
+      headers: isFbCdn ? {
         'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
         'Referer': 'https://www.facebook.com/',
+        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+      } : {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
         'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
       },
       redirect: 'follow',

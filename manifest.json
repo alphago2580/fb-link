@@ -1,7 +1,7 @@
 {
-  "name": "카카오링크 변환기",
-  "short_name": "FB변환기",
-  "description": "Facebook 링크를 카카오톡 썸네일이 보이는 링크로 변환",
+  "name": "카카오 썸네일 링크 변환기",
+  "short_name": "썸네일변환",
+  "description": "모든 웹페이지 링크를 카카오톡 썸네일이 보이는 링크로 변환 (페이스북·인스타그램 포함)",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

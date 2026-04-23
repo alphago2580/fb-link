@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FB/IG 링크 변환기</title>
+  <title>카카오톡 썸네일 링크 변환기</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#1877f2">
   <meta name="mobile-web-app-capable" content="yes">
@@ -119,18 +119,18 @@
 <body>
   <div class="card">
     <div class="logo">🔗</div>
-    <h1 id="main-title">Facebook / Instagram 링크 변환기</h1>
-    <p class="subtitle">카카오톡에 공유할 때 썸네일이 안 나오는 경우, 아래에서 변환하면 <strong>썸네일이 보이는 링크</strong>로 만들 수 있어요.</p>
-    <div style="font-size:11px;color:#ccc;text-align:right;margin-top:-20px;margin-bottom:16px;">v2026.03.05</div>
+    <h1 id="main-title">카카오톡 썸네일 링크 변환기</h1>
+    <p class="subtitle">어떤 웹페이지든 붙여넣으면 카카오톡에 <strong>썸네일이 보이는 링크</strong>로 만들어줘요. 페이스북·인스타그램도 지원합니다.</p>
+    <div style="font-size:11px;color:#ccc;text-align:right;margin-top:-20px;margin-bottom:16px;">v2026.04.23</div>
 
     <!-- ① 북마클릿 방법 (추천) -->
     <div class="section-title">🔖 북마클릿 <span class="badge badge-green">추천</span></div>
-    <p class="section-sub" id="bm-sub">PC 브라우저에서 페이스북/인스타그램 게시물 열고 버튼 한 번 — 제일 정확해요.</p>
-    <a id="bookmarklet" class="bookmarklet-btn" href="#">📋 FB/IG→카톡 변환</a>
+    <p class="section-sub" id="bm-sub">PC 브라우저에서 원하는 페이지 열고 버튼 한 번 — 현재 URL을 자동 변환해요.</p>
+    <a id="bookmarklet" class="bookmarklet-btn" href="#">📋 카톡 썸네일 변환</a>
     <ol class="steps">
       <li>위 버튼을 <strong>북마크 바로 드래그</strong>해서 설치</li>
-      <li>페이스북 또는 인스타그램에서 공유할 게시물 열기</li>
-      <li><strong>FB/IG→카톡 변환</strong> 클릭 → 링크 자동 복사</li>
+      <li>공유할 웹페이지(뉴스·블로그·SNS) 열기</li>
+      <li><strong>카톡 썸네일 변환</strong> 클릭 → 링크 자동 복사</li>
       <li>카카오톡에 붙여넣기</li>
     </ol>
     <div class="tip" style="margin-top:14px;">
@@ -145,8 +145,8 @@
     <p class="section-sub">모바일이거나 북마클릿이 불편한 경우 — URL과 정보를 직접 입력하세요.</p>
 
     <div class="field">
-      <label id="input-label">Facebook / Instagram 게시물 링크 *</label>
-      <textarea id="input" placeholder="https://www.facebook.com/share/p/...&#10;https://www.instagram.com/p/...&#10;https://www.instagram.com/reel/..."></textarea>
+      <label id="input-label">링크 *</label>
+      <textarea id="input" placeholder="https://news.example.com/article/...&#10;https://www.facebook.com/share/p/...&#10;https://www.instagram.com/p/..."></textarea>
     </div>
 
     <details>
@@ -156,7 +156,7 @@
         <input type="text" id="manualTitle" placeholder="게시물 제목 (비우면 '게시물 작성자 이름' 으로 표시될 수 있음)" />
       </div>
       <div class="field">
-        <label>이미지 URL (페이스북에서 이미지 우클릭 → 이미지 주소 복사)</label>
+        <label>이미지 URL (페이지 이미지 우클릭 → 이미지 주소 복사)</label>
         <input type="url" id="manualImg" placeholder="https://..." />
       </div>
       <div class="field">
@@ -222,19 +222,20 @@
 
     // 플랫폼 감지
     function detectPlatform(url) {
-      if (!url) return 'fb';
+      if (!url) return 'generic';
       if (url.includes('instagram.com')) return 'ig';
-      return 'fb';
+      if (url.includes('facebook.com') || url.includes('fb.me') || url.includes('fb.watch')) return 'fb';
+      return 'generic';
     }
 
     function applyPlatformTheme(platform) {
       const card = document.querySelector('.card');
       card.classList.remove('platform-fb', 'platform-ig');
-      card.classList.add('platform-' + platform);
-      const isIg = platform === 'ig';
-      document.getElementById('main-title').textContent = isIg
-        ? 'Instagram 링크 변환기'
-        : 'Facebook / Instagram 링크 변환기';
+      if (platform === 'ig' || platform === 'fb') card.classList.add('platform-' + platform);
+      const title = platform === 'ig' ? 'Instagram 링크 변환기'
+                  : platform === 'fb' ? 'Facebook 링크 변환기'
+                  : '카카오톡 썸네일 링크 변환기';
+      document.getElementById('main-title').textContent = title;
     }
 
     document.getElementById('input').addEventListener('input', function() {
@@ -247,7 +248,7 @@
       const base = VERCEL_BASE;
       const bmCode = `javascript:(function(){` +
         `var u=window.location.href;` +
-        `if(!u.includes('facebook.com')&&!u.includes('instagram.com'))return;` +
+        `if(!/^https?:/i.test(u))return;` +
         `var proxy='${base}?url='+encodeURIComponent(u);` +
         `var toast=function(ok){` +
           `var d=document.createElement('div');` +
@@ -329,9 +330,7 @@
       sharePDiv.style.display = 'none';
 
       if (!input) { showError('링크를 입력해주세요.'); return; }
-      const isFb = input.includes('facebook.com') || input.includes('fb.me') || input.includes('fb.watch');
-      const isIg = input.includes('instagram.com');
-      if (!isFb && !isIg) { showError('Facebook 또는 Instagram 링크가 아닌 것 같아요.'); return; }
+      if (!/^https?:\/\//i.test(input)) { showError('http:// 또는 https:// 로 시작하는 링크를 입력해주세요.'); return; }
 
       const btn = document.querySelector('.main-btn');
 
@@ -443,14 +442,15 @@
           .filter(Boolean);
         if (!candidates.length) return;
 
-        // URL처럼 생긴 것 or facebook 포함된 것 우선
-        const isFbUrl = s => /facebook\.com|fb\.com|instagram\.com/i.test(s);
-        const shared = candidates.find(isFbUrl) || candidates[0];
+        // URL 형태를 담고 있는 후보 우선
+        const hasUrl = s => /https?:\/\//i.test(s);
+        const shared = candidates.find(hasUrl) || candidates[0];
         if (!shared) return;
 
-        // fbtext가 "제목 URL" 형식이면 URL만 추출
+        // "제목 URL" 형식이면 URL만 추출
         const urlMatch = shared.match(/https?:\/\/\S+/);
         const finalUrl = urlMatch ? urlMatch[0] : shared;
+        if (!/^https?:\/\//i.test(finalUrl)) return;
 
         document.getElementById('share-overlay').style.display = 'flex';
 

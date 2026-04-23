@@ -10,9 +10,29 @@ export default async function handler(req, res) {
   if (!url) return res.status(400).json({ error: 'Missing url' });
   const isFbUrl = u => u.includes('facebook.com') || u.includes('fb.me') || u.includes('fb.watch');
   const isIgUrl = u => u.includes('instagram.com');
-  if (!isFbUrl(url) && !isIgUrl(url)) {
-    return res.status(400).json({ error: 'Not a Facebook or Instagram URL' });
-  }
+
+  // SSRF 방지 — 공개 http(s) URL만 허용
+  const isSafe = raw => {
+    try {
+      const u = new URL(raw);
+      if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+      const h = u.hostname.toLowerCase();
+      if (!h) return false;
+      if (h === 'localhost' || h === '0.0.0.0' || h === '::1' || h === '[::1]') return false;
+      const ipv4 = h.match(/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+      if (ipv4) {
+        const a = +ipv4[1], b = +ipv4[2];
+        if (a === 10 || a === 127) return false;
+        if (a === 169 && b === 254) return false;
+        if (a === 172 && b >= 16 && b <= 31) return false;
+        if (a === 192 && b === 168) return false;
+        if (a === 0 || a >= 224) return false;
+      }
+      if (/^(fc|fd|fe80)/.test(h)) return false;
+      return true;
+    } catch { return false; }
+  };
+  if (!isSafe(url)) return res.status(400).json({ error: 'Invalid url' });
 
   const unesc = s => String(s || '')
     .replace(/&#x([0-9a-fA-F]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
@@ -40,12 +60,17 @@ export default async function handler(req, res) {
     'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
     'Mozilla/5.0 (compatible; Twitterbot/1.0)',
     'Facebot Twitterbot/1.0',
-  ] : [
+  ] : isFbUrl(url) ? [
     'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
     'Facebot Twitterbot/1.0',
     'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
     'Mozilla/5.0 (compatible; Twitterbot/1.0)',
     'LinkedInBot/1.0 (compatible; Mozilla/5.0; Jakarta Commons-HttpClient/3.1 +http://www.linkedin.com)',
+  ] : [
+    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    'Mozilla/5.0 (compatible; Twitterbot/1.0)',
+    'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
   ];
 
   const isSharePUrl = u => /facebook\.com\/share\/(p|v|r)\//.test(u);
@@ -70,7 +95,7 @@ export default async function handler(req, res) {
         try {
           const loginUrl = new URL(finalUrl);
           const nextUrl = loginUrl.searchParams.get('next');
-          if (nextUrl && nextUrl.includes('facebook.com')) {
+          if (nextUrl && isSafe(nextUrl)) {
             // next URL로 OG 재시도 (facebookexternalhit UA)
             const r2 = await fetch(nextUrl, {
               headers: {
